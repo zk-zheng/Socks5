@@ -35,53 +35,23 @@ public class DarthEncrypt
         Sha512 = 3
     }
 
-
     // Fields
-    private string _fileDecryptExtension;
-    private string _fileEncryptExtension;
+    //private string _fileDecryptExtension;
+    //private string _fileEncryptExtension;
     private string _initVector;
     private int _passPhraseStrength;
 
     public DarthEncrypt()
     {
         InitializeComponent();
-        if (PassPhrase == null) PassPhrase = "Z29sZGZpc2ggYm93bA==";
-        if (SaltValue  == null) SaltValue = "ZGlhbW9uZCByaW5n";
+        if (PassPhrase == null) 
+            PassPhrase = "Z29sZGZpc2ggYm93bA==";
+        if (SaltValue == null) 
+            SaltValue = "ZGlhbW9uZCByaW5n";
         HashType = DcHashTypes.Sha1;
-        if (_fileDecryptExtension == null) _fileDecryptExtension = "dec";
-        if (_fileEncryptExtension == null) _fileEncryptExtension = "enc";
-        if (_initVector           == null) _initVector = "@1B2c3D4e5F6g7H8";
+        if (_initVector == null) 
+            _initVector = "@1B2c3D4e5F6g7H8";
         _passPhraseStrength = 2;
-    }
-
-
-    // Properties
-    [Category("File Defaults")]
-    [Description("The default decrypted file extension")]
-    public string FileDecryptExtension
-    {
-        get => _fileDecryptExtension;
-        set
-        {
-            if (value.Length < 3)
-                _fileDecryptExtension = "dec";
-            else
-                _fileDecryptExtension = value;
-        }
-    }
-
-    [Category("File Defaults")]
-    [Description("The default encrypted file extension")]
-    public string FileEncryptExtension
-    {
-        get => _fileEncryptExtension;
-        set
-        {
-            if (value.Length < 3)
-                _fileEncryptExtension = "enc";
-            else
-                _fileEncryptExtension = value;
-        }
     }
 
     [Category("Encryption Options")]
@@ -123,39 +93,6 @@ public class DarthEncrypt
     [Category("Encryption Options")]
     [Description("The salt value used to foil hackers attempting to crack the encryption")]
     public string SaltValue { get; set; }
-
-    /// <summary>
-    ///     Decrypt files using Rijandel-128 bit managed encryption
-    /// </summary>
-    /// <param name="inFile">The filename</param>
-    /// <remarks>Decrypts files</remarks>
-    public void DecryptFile(string inFile)
-    {
-        DoTransformFile(inFile, TransformType.Decrypt, null, null);
-    }
-
-    /// <summary>
-    ///     Decrypt files using Rijandel-128 bit managed encryption
-    /// </summary>
-    /// <param name="inFile">The filename</param>
-    /// <param name="outFileName">Filename to output as (Only in local directory)</param>
-    /// <remarks></remarks>
-    public void DecryptFile(string inFile, string outFileName)
-    {
-        DoTransformFile(inFile, TransformType.Decrypt, outFileName, null);
-    }
-
-    /// <summary>
-    ///     Decrypt files using Rijandel-128 bit managed encryption
-    /// </summary>
-    /// <param name="inFile">The filename</param>
-    /// <param name="outFileName">Filename to output as</param>
-    /// <param name="outDirectory">Directory to output file to</param>
-    /// <remarks></remarks>
-    public void DecryptFile(string inFile, string outFileName, string outDirectory)
-    {
-        DoTransformFile(inFile, TransformType.Decrypt, outFileName, outDirectory);
-    }
 
     public byte[] CompressBytes(byte[] bytes, int offset, int count)
     {
@@ -218,147 +155,6 @@ public class DarthEncrypt
         return buffer5;
     }
 
-    /// <summary>
-    ///     Decrypts encrypted text using Rijandel-128 bit managed encryption
-    /// </summary>
-    /// <param name="encryptedText">The text to decrypt</param>
-    /// <returns>Decrypted text</returns>
-    /// <remarks>Decrypts text</remarks>
-    public string DecryptString(string encryptedText)
-    {
-        var initVector = InitVector;
-        var num = 0x100;
-        var bytes = Encoding.ASCII.GetBytes(initVector);
-        var rgbSalt = Encoding.ASCII.GetBytes(SaltValue);
-        var buffer = Convert.FromBase64String(encryptedText);
-        var strHashName = "SHA1";
-        if (HashType == DcHashTypes.Sha1) strHashName = "SHA1";
-        if (HashType == DcHashTypes.Sha256) strHashName = "SHA256";
-        if (HashType == DcHashTypes.Sha384) strHashName = "SHA384";
-        if (HashType == DcHashTypes.Sha512) strHashName = "SHA512";
-        var rgbKey = new PasswordDeriveBytes(PassPhrase, rgbSalt, strHashName, PassPhraseStrength).GetBytes(num / 8);
-        var managed = new RijndaelManaged();
-        managed.Mode = CipherMode.CBC;
-        var transform = managed.CreateDecryptor(rgbKey, bytes);
-        var stream = new MemoryStream(buffer);
-        var stream2 = new CryptoStream(stream, transform, CryptoStreamMode.Read);
-        var buffer5 = new byte[buffer.Length];
-        var count = stream2.Read(buffer5, 0, buffer5.Length);
-        stream.Close();
-        stream2.Close();
-        return Encoding.UTF8.GetString(buffer5, 0, count);
-    }
-
-    private void DoTransformFile(string inFile, TransformType? aType, string? newFileName, string? alternativeDirectory)
-    {
-        ICryptoTransform? transform = null;
-        var info = new FileInfo(inFile);
-        var initVector = InitVector;
-        var num = 0x100;
-        var bytes = Encoding.ASCII.GetBytes(initVector);
-        var rgbSalt = Encoding.ASCII.GetBytes(SaltValue);
-        var strHashName = "SHA1";
-        if (HashType == DcHashTypes.Sha1) strHashName = "SHA1";
-        if (HashType == DcHashTypes.Sha256) strHashName = "SHA256";
-        if (HashType == DcHashTypes.Sha384) strHashName = "SHA384";
-        if (HashType == DcHashTypes.Sha512) strHashName = "SHA512";
-        var rgbKey = new PasswordDeriveBytes(PassPhrase, rgbSalt, strHashName, PassPhraseStrength).GetBytes(num / 8);
-        var managed = new RijndaelManaged();
-        managed.Mode = CipherMode.CBC;
-        if (aType == TransformType.Encrypt)
-            transform = managed.CreateEncryptor(rgbKey, bytes);
-        else
-            transform = managed.CreateDecryptor(rgbKey, bytes);
-        var path = "";
-        if (newFileName == null)
-        {
-            if (aType == TransformType.Encrypt)
-                path = inFile.Substring(0, inFile.LastIndexOf(".")) + "." + FileEncryptExtension;
-            else
-                path = inFile.Substring(0, inFile.LastIndexOf(".")) + "." + FileDecryptExtension;
-        }
-
-        if (newFileName != null)
-        {
-            if (alternativeDirectory != null)
-            {
-                var info2 = new DirectoryInfo(alternativeDirectory);
-                path = alternativeDirectory + newFileName;
-            }
-            else
-            {
-                var info3 = new FileInfo(inFile);
-                path = info3.DirectoryName + "\\" + newFileName;
-                if (path.LastIndexOf(".") < 1)
-                {
-                    if (aType == TransformType.Encrypt)
-                        path = path + "." + FileEncryptExtension;
-                    else
-                        path = path + "." + FileDecryptExtension;
-                }
-            }
-        }
-
-        var stream = new FileStream(path, FileMode.Create);
-        using (var stream2 = new CryptoStream(stream, transform, CryptoStreamMode.Write))
-        {
-            var count = 0;
-            var num3 = 0;
-            var num4 = managed.BlockSize / 8;
-            var buffer = new byte[num4];
-            var num5 = 0;
-            using (var stream3 = new FileStream(inFile, FileMode.Open))
-            {
-                do
-                {
-                    count = stream3.Read(buffer, 0, num4);
-                    num3 = num3 + count;
-                    stream2.Write(buffer, 0, count);
-                    num5 = num5 + num4;
-                } while (count > 0);
-
-                stream2.FlushFinalBlock();
-                stream2.Close();
-                stream3.Close();
-            }
-
-            stream.Close();
-        }
-    }
-
-    /// <summary>
-    ///     Encrypts file
-    /// </summary>
-    /// <param name="inFile">The file path of original file</param>
-    /// <remarks></remarks>
-    public void EncryptFile(string inFile)
-    {
-        DoTransformFile(inFile, TransformType.Encrypt, null, null);
-    }
-
-    /// <summary>
-    ///     Encrypts file
-    /// </summary>
-    /// <param name="inFile">The file path of the original file</param>
-    /// <param name="outFileName">Filename to output as</param>
-    /// <remarks></remarks>
-    public void EncryptFile(string inFile, string outFileName)
-    {
-        DoTransformFile(inFile, TransformType.Encrypt, outFileName, null);
-    }
-
-    /// <summary>
-    ///     Encrypts file
-    /// </summary>
-    /// <param name="inFile">The file path of the original file</param>
-    /// <param name="outFileName">Filename to output as</param>
-    /// <param name="outDirectory">Directory to output file</param>
-    /// <remarks></remarks>
-    public void EncryptFile(string inFile, string outFileName, string outDirectory)
-    {
-        DoTransformFile(inFile, TransformType.Encrypt, outFileName, outDirectory);
-    }
-
     public byte[] EncryptBytes(byte[] bytearray)
     {
         var initVector = InitVector;
@@ -386,47 +182,7 @@ public class DarthEncrypt
         return inArray;
     }
 
-    /// <summary>
-    ///     Encrypts a string using Rijandel-128 bit secure encryption. Make sure to set the variable "Passphrase"
-    /// </summary>
-    /// <param name="plainText">The text to encrypt.</param>
-    /// <returns>The encrypted text</returns>
-    /// <remarks>Encrypts a string</remarks>
-    [Description("Encrypt a string using your preferred encryption settings (pass phrase, salt value..)")]
-    public string EncryptString(string plainText)
-    {
-        var initVector = InitVector;
-        var num = 0x100;
-        var bytes = Encoding.ASCII.GetBytes(initVector);
-        var rgbSalt = Encoding.ASCII.GetBytes(SaltValue);
-        var buffer = Encoding.UTF8.GetBytes(plainText);
-        var strHashName = "SHA1";
-        if (HashType == DcHashTypes.Sha1) strHashName = "SHA1";
-        if (HashType == DcHashTypes.Sha256) strHashName = "SHA256";
-        if (HashType == DcHashTypes.Sha384) strHashName = "SHA384";
-        if (HashType == DcHashTypes.Sha512) strHashName = "SHA512";
-        var rgbKey = new PasswordDeriveBytes(PassPhrase, rgbSalt, strHashName, PassPhraseStrength).GetBytes(num / 8);
-        var managed = new RijndaelManaged();
-        managed.Mode = CipherMode.CBC;
-        var transform = managed.CreateEncryptor(rgbKey, bytes);
-        var stream = new MemoryStream();
-        var stream2 = new CryptoStream(stream, transform, CryptoStreamMode.Write);
-        stream2.Write(buffer, 0, buffer.Length);
-        stream2.FlushFinalBlock();
-        var inArray = stream.ToArray();
-        stream.Close();
-        stream2.Close();
-        return Convert.ToBase64String(inArray);
-    }
-
     private void InitializeComponent()
     {
-    }
-
-    private enum TransformType
-    {
-        // Fields
-        Decrypt = 1,
-        Encrypt = 0
     }
 }

@@ -34,7 +34,8 @@ public class Socks
         var bytes = new byte[supportedAuthTypes.Count + 2];
         bytes[0] = 0x05; // protocol version - socks5
         bytes[1] = (byte)supportedAuthTypes.Count;
-        for (var i = 0; i < supportedAuthTypes.Count; i++) bytes[i + 2] = (byte)supportedAuthTypes[i];
+        for (var i = 0; i < supportedAuthTypes.Count; i++) 
+            bytes[i + 2] = (byte)supportedAuthTypes[i];
         client.Send(bytes);
 
         var buffer = new byte[512];
@@ -51,7 +52,7 @@ public class Socks
         return 0;
     }
 
-    public static int SendLogin(Client cli, string username, string password)
+    public static int SendLogin(Client client, string username, string password)
     {
         var x = new byte[username.Length + password.Length + 3];
         var total = 0;
@@ -62,9 +63,10 @@ public class Socks
         x[total++] = Convert.ToByte(password.Length);
         Buffer.BlockCopy(Encoding.ASCII.GetBytes(password), 0, x, total, password.Length);
         //send request.
-        cli.Send(x);
+        client.Send(x);
+
         var buffer = new byte[512];
-        cli.Receive(buffer, 0, buffer.Length);
+        client.Receive(buffer, 0, buffer.Length);
         return buffer[1] switch
                {
                    0x00 => 1,
@@ -86,10 +88,12 @@ public class Socks
         var encOutput = enc.ProcessOutputData(p, 0, p.Length);
         ArgumentNullException.ThrowIfNull(encOutput);
         cli.Send(encOutput);
+
         var buffer = new byte[512];
         //process input data.
         var recv = cli.Receive(buffer, 0, buffer.Length);
-        if (recv == -1) return SocksError.Failure;
+        if (recv == -1) 
+            return SocksError.Failure;
         var buff = enc.ProcessInputData(buffer, 0, recv);
         ArgumentNullException.ThrowIfNull(buff);
 
@@ -117,8 +121,8 @@ public class Socks
                     client.enc.SetType(AuthTypes.Login);
                     ArgumentNullException.ThrowIfNull(username);
                     ArgumentNullException.ThrowIfNull(password);
-
                     break;
+
                 case AuthTypes.SocksBoth:
                     //socksboth.
                     client.enc.SetType(AuthTypes.SocksBoth);
@@ -139,8 +143,8 @@ public class Socks
                     client.enc.SetEncKey(client.enc.key.Decrypt(newkey, false));
                     //now we share our encryption key.
                     client.Client.Send(client.enc.ShareEncryptionKey());
-
                     break;
+
                 case AuthTypes.SocksEncrypt:
                     client.enc.SetType(AuthTypes.SocksEncrypt);
                     client.enc.GenerateKeys();
@@ -160,13 +164,14 @@ public class Socks
                     //now we share our encryption key.
 
                     client.Client.Send(client.enc.ShareEncryptionKey());
-
                     //socksencrypt.
                     break;
+
                 case AuthTypes.SocksCompress:
                     client.enc.SetType(AuthTypes.SocksCompress);
                     //sockscompress.
                     break;
+
                 default:
                     client.Client.Disconnect();
                     return false;

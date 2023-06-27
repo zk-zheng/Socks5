@@ -75,7 +75,8 @@ public class Socks5Server
 
     public void Stop()
     {
-        if (!_started) return;
+        if (!_started) 
+            return;
         _server.Stop();
         
         foreach (var t in Clients)
@@ -91,7 +92,7 @@ public class Socks5Server
     {
         Console.WriteLine("Client connected.");
 
-        //call plugins related to ClientConnectedHandler.
+        // call plugins related to ClientConnectedHandler.
         foreach (ClientConnectedHandler cch in PluginLoader.LoadPlugin(typeof(ClientConnectedHandler)))
         {
             try
@@ -109,6 +110,7 @@ public class Socks5Server
         }
 
         var socksClient = new SocksClient(e.Client);
+
         e.Client.OnDataReceived += Client_onDataReceived;
         e.Client.OnDataSent += Client_onDataSent;
         socksClient.OnClientDisconnected += Client_onClientDisconnected;
@@ -136,7 +138,7 @@ public class Socks5Server
         }
     }
 
-    //All stats data is "Server" bandwidth stats, meaning clientside totals not counted.
+    // All stats data is "Server" bandwidth stats, meaning clientside totals not counted.
     private void Client_onDataSent(object? sender, DataEventArgs e)
     {
         //Technically we are sending data from the remote server to the client, so it's being "received" 

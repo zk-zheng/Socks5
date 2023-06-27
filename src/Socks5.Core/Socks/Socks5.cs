@@ -162,7 +162,9 @@ internal class Socks5
         byte[] data;
         var recv = Receive(client.Client, out data);
         var buff = ph.ProcessInputData(data, 0, recv);
-        if (buff == null || (HeaderTypes)buff[0] != HeaderTypes.Socks5) return null;
+        if (buff == null || (HeaderTypes)buff[0] != HeaderTypes.Socks5) 
+            return null;
+
         switch ((StreamTypes)buff[1])
         {
             case StreamTypes.Stream:
@@ -179,6 +181,7 @@ internal class Socks5
                         fwd += 4;
                     }
                         break;
+
                     case AddressType.Domain:
                     {
                         var domainlen = Convert.ToInt32(buff[4]);
@@ -186,6 +189,7 @@ internal class Socks5
                         fwd += domainlen + 1;
                     }
                         break;
+
                     case AddressType.Pv6:
                         //can't handle IPV6 traffic just yet.
                         return null;
@@ -196,6 +200,7 @@ internal class Socks5
                 var port = BitConverter.ToUInt16(new[] { po[1], po[0] }, 0);
                 return new SocksRequest(StreamTypes.Stream, (AddressType)buff[3], address, port);
             }
+
             default:
                 //not supported.
                 return null;
