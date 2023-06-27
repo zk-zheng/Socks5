@@ -102,6 +102,7 @@ public class Client
             {
                 return;
             }
+
             var received = ((Socket)res.AsyncState).EndReceive(res, out error);
             if (received <= 0 || error != SocketError.Success)
             {
@@ -115,9 +116,7 @@ public class Client
         catch (Exception ex)
         {
 #if DEBUG
-#if DEBUG
             Console.WriteLine(ex.ToString());
-#endif
 #endif
             Disconnect();
         }
@@ -156,7 +155,7 @@ public class Client
             ThreadPool.QueueUserWorkItem(ReceiveAsync, bufferSize);
             return;
         }
-        
+
         ReceiveAsync(bufferSize);
     }
 
@@ -165,7 +164,8 @@ public class Client
         try
         {
             var bufferSize = (int)(obj ?? -1);
-            if (bufferSize > -1) _buffer = new byte[bufferSize];
+            if (bufferSize > -1) 
+                _buffer = new byte[bufferSize];
             Receiving = true;
             Sock.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, DataReceived, Sock);
         }
@@ -177,7 +177,6 @@ public class Client
             Disconnect();
         }
     }
-
 
     public void Disconnect()
     {
@@ -238,7 +237,8 @@ public class Client
     {
         try
         {
-            if (Sock != null && Sock.Connected) Sock.BeginSend(buff, offset, count, SocketFlags.None, DataSent, Sock);
+            if (Sock != null && Sock.Connected)
+                Sock.BeginSend(buff, offset, count, SocketFlags.None, DataSent, Sock);
         }
         catch (Exception ex)
         {
@@ -261,6 +261,8 @@ public class Client
                     return false;
                 }
 
+                //!! TODO: if sent count != count ?
+
                 var data = new DataEventArgs(this, buff, count);
                 OnDataSent(this, data);
                 return true;
@@ -271,9 +273,7 @@ public class Client
         catch (Exception ex)
         {
 #if DEBUG
-#if DEBUG
             Console.WriteLine(ex.ToString());
-#endif
 #endif
             Disconnect();
             return false;

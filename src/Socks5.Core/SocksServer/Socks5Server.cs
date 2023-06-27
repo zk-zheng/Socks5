@@ -41,7 +41,7 @@ public class Socks5Server
         Stats = new Stats();
         OutboundIpAddress = IPAddress.Any;
         _server = new TcpServer(ip, port);
-        _server.OnClientConnected += _server_onClientConnected;
+        _server.OnClientConnected += Server_onClientConnected;
     }
 
     public int Timeout { get; set; }
@@ -87,9 +87,10 @@ public class Socks5Server
         _started = false;
     }
 
-    private void _server_onClientConnected(object? sender, ClientEventArgs e)
+    private void Server_onClientConnected(object? sender, ClientEventArgs e)
     {
-        //Console.WriteLine("Client connected.");
+        Console.WriteLine("Client connected.");
+
         //call plugins related to ClientConnectedHandler.
         foreach (ClientConnectedHandler cch in PluginLoader.LoadPlugin(typeof(ClientConnectedHandler)))
         {
@@ -107,18 +108,18 @@ public class Socks5Server
             }
         }
 
-        var client = new SocksClient(e.Client);
+        var socksClient = new SocksClient(e.Client);
         e.Client.OnDataReceived += Client_onDataReceived;
         e.Client.OnDataSent += Client_onDataSent;
-        client.OnClientDisconnected += client_onClientDisconnected;
-        Clients.Add(client);
+        socksClient.OnClientDisconnected += Client_onClientDisconnected;
+        Clients.Add(socksClient);
         Stats.AddClient();
-        client.Begin(OutboundIpAddress, PacketSize, Timeout);
+        socksClient.Begin(OutboundIpAddress, PacketSize, Timeout);
     }
 
-    private void client_onClientDisconnected(object? sender, SocksClientEventArgs e)
+    private void Client_onClientDisconnected(object? sender, SocksClientEventArgs e)
     {
-        e.Client.OnClientDisconnected -= client_onClientDisconnected;
+        e.Client.OnClientDisconnected -= Client_onClientDisconnected;
         e.Client.Client.OnDataReceived -= Client_onDataReceived;
         e.Client.Client.OnDataSent -= Client_onDataSent;
         Clients.Remove(e.Client);

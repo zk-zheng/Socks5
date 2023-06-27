@@ -11,8 +11,13 @@ Console.WriteLine("Server Started!");
 
 while (true)
 {
-    Console.Write("Total Clients: \t{0}\nTotal Recvd: \t{1:0.00##}MB\nTotal Sent: \t{2:0.00##}MB\n", socks5Server.Stats.TotalClients, ((socks5Server.Stats.NetworkReceived / 1024f) / 1024f), ((socks5Server.Stats.NetworkSent / 1024f) / 1024f));
-    Console.Write("Receiving/sec: \t{0}\nSending/sec: \t{1}", socks5Server.Stats.ReceivedBytesPerSecond(), socks5Server.Stats.SentBytesPerSecond());
+    Console.Write("Total Clients: \t{0}\n" +
+                  "Total Recvd: \t{1:0.00##}MB\n" +
+                  "Total Sent: \t{2:0.00##}MB\n", 
+        socks5Server.Stats.TotalClients, ((socks5Server.Stats.NetworkReceived / 1024f) / 1024f), ((socks5Server.Stats.NetworkSent / 1024f) / 1024f));
+    Console.Write("Receiving/sec: \t{0}\n" +
+                  "Sending/sec: \t{1}", 
+        socks5Server.Stats.ReceivedBytesPerSecond(), socks5Server.Stats.SentBytesPerSecond());
     Thread.Sleep(1000);
     Console.Clear();
 }
