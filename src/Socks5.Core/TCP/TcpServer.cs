@@ -92,7 +92,7 @@ public class TcpServer
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.ToString());
+            Utils.TraceMessage(ex.ToString());
             //server stopped or client errored?
         }
     }

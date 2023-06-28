@@ -17,7 +17,6 @@
 */
 
 using System.Net;
-using Socks5.Core.Plugin;
 using Socks5.Core.Socks;
 using Socks5.Core.TCP;
 
@@ -54,8 +53,6 @@ public class Socks5Server
         if (_started)
             return;
         
-        PluginLoader.LoadPluginsFromDisk = LoadPluginsFromDisk;
-        PluginLoader.LoadPlugins();
         _server.PacketSize = PacketSize;
         _server.Start();
         _started = true;
@@ -90,23 +87,6 @@ public class Socks5Server
     {
         Console.WriteLine("Client connected.");
 
-        // call plugins related to ClientConnectedHandler.
-        foreach (ClientConnectedHandler cch in PluginLoader.LoadPlugin(typeof(ClientConnectedHandler)))
-        {
-            try
-            {
-                if (e.Client.Sock.RemoteEndPoint is not null && !cch.OnConnect(e.Client, (IPEndPoint)e.Client.Sock.RemoteEndPoint))
-                {
-                    e.Client.Disconnect();
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-            }
-        }
-
         var clientEnd = new ClientEnd(e.Client);
 
         e.Client.OnDataReceived += Client_onDataReceived;
@@ -123,17 +103,6 @@ public class Socks5Server
         e.Client.Client.OnDataReceived -= Client_onDataReceived;
         e.Client.Client.OnDataSent -= Client_onDataSent;
         ClientEnds.Remove(e.Client);
-        foreach (ClientDisconnectedHandler cdh in PluginLoader.LoadPlugin(typeof(ClientDisconnectedHandler)))
-        {
-            try
-            {
-                cdh.OnDisconnected(sender, e);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-            }
-        }
     }
 
     // All stats data is "Server" bandwidth stats, meaning clientside totals not counted.

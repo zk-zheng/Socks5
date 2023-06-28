@@ -58,13 +58,10 @@ public class Stats
     public string HumanReadable(ulong i)
     {
         // Determine the suffix and readable value
-        string suffix;
-        double readable;
-        suffix = "KB";
-        readable = i;
+        double readable = i;
 
         // Divide by 1024 to get fractional value
-        readable = (readable / 1024);
+        readable /= 1024;
         // Return formatted number with suffix
         return readable.ToString("0.###");
     }

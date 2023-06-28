@@ -18,7 +18,6 @@
 
 using System.Net;
 using System.Net.Sockets;
-using Socks5.Core.Plugin;
 using Socks5.Core.TCP;
 
 namespace Socks5.Core.Socks;
@@ -27,7 +26,6 @@ internal class SocksTunnel
 {
     private readonly int _packetSize = 4096;
 
-    private readonly List<DataHandler> _plugins = new();
     public ClientEnd Client;
     private bool _disconnected;
     public SocksRequest ModifiedReq;
@@ -57,27 +55,8 @@ internal class SocksTunnel
             return;
         }
 #if DEBUG
-        //Console.WriteLine("{0}:{1}", ModifiedReq.Address, ModifiedReq.Port);
+        Console.WriteLine("SocksTunnel.Open: {0}:{1}", ModifiedReq.Address, ModifiedReq.Port);
 #endif
-        foreach (ConnectSocketOverrideHandler conn in PluginLoader.LoadPlugin(typeof(ConnectSocketOverrideHandler)))
-        {
-            if (conn.Enabled)
-            {
-                var pm = conn.OnConnectOverride(ModifiedReq);
-                if (pm is { Sock.Connected: true })
-                    //check if it's connected.
-                {
-                    RemoteClient = pm;
-                    //send request right here.
-                    var data = Req.GetData(true);
-                    data[1] = 0x00;
-                    //gucci let's go.
-                    Client.Client.Send(data);
-                    ConnectHandler();
-                    return;
-                }
-            }
-        }
 
         if (ModifiedReq.Error != SocksError.Granted)
         {
@@ -136,12 +115,6 @@ internal class SocksTunnel
         //start receiving from both endpoints.
         try
         {
-            //all plugins get the event thrown.
-            foreach (DataHandler data in PluginLoader.LoadPlugin(typeof(DataHandler)))
-            {
-                _plugins.Push(data);
-            }
-
             Client.Client.OnDataReceived += Client_onDataReceived;
             RemoteClient.OnDataReceived += RemoteClient_onDataReceived;
             
@@ -151,8 +124,9 @@ internal class SocksTunnel
             Client.Client.StartReceiveAsync();
             RemoteClient.StartReceiveAsync();
         }
-        catch
+        catch (Exception ex)
         {
+            Utils.TraceMessage(ex.ToString());
             RemoteClient.Disconnect();
             Client.Client.Disconnect();
         }
@@ -177,7 +151,8 @@ internal class SocksTunnel
 #if DEBUG
         //Console.WriteLine("Remote DC'd");
 #endif
-        if (_disconnected) return;
+        if (_disconnected) 
+            return;
         //Console.WriteLine("Remote DC'd");
         _disconnected = true;
         Client.Client.OnDataReceived -= Client_onDataReceived;
@@ -188,8 +163,6 @@ internal class SocksTunnel
     private void RemoteClient_onDataReceived(object? sender, DataEventArgs e)
     {
         e.Request = ModifiedReq;
-        foreach (var f in _plugins)
-            f.OnServerDataReceived(this, e);
         if (e.Count > 0)
             Client.Client.Send(e.Buffer, e.Offset, e.Count);
         if (!RemoteClient.Receiving)
@@ -199,8 +172,6 @@ internal class SocksTunnel
     private void Client_onDataReceived(object? sender, DataEventArgs e)
     {
         e.Request = ModifiedReq;
-        foreach (var f in _plugins)
-            f.OnClientDataReceived(this, e);
         if (e.Count > 0)
             RemoteClient.Send(e.Buffer, e.Offset, e.Count);
         if (!Client.Client.Receiving)

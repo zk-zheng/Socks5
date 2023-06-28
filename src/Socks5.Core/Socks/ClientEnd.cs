@@ -18,7 +18,6 @@
 
 using System.Net;
 using Socks5.Core.Encryption;
-using Socks5.Core.Plugin;
 using Socks5.Core.TCP;
 
 namespace Socks5.Core.Socks;
@@ -50,57 +49,13 @@ public class ClientEnd
 
         Authenticated = 0;
         SocksEncryption socksEncryption = new SocksEncryption();
-        var lhandlers = PluginLoader.LoadPlugin(typeof(LoginHandler));
         //check out different auth types, none will have no authentication, the rest do.
-        if (lhandlers.Count > 0 &&
-            (authtypes.Contains(AuthTypes.SocksBoth)     ||
-             authtypes.Contains(AuthTypes.SocksEncrypt)  ||
-             authtypes.Contains(AuthTypes.SocksCompress) ||
-             authtypes.Contains(AuthTypes.Login)))
-        {
-            //this is the preferred method.
-            socksEncryption = Socks5.RequestSpecialMode(authtypes, Client);
-            foreach (LoginHandler lh in lhandlers)
-            {
-                //request login.
-                var user = Socks5.RequestLogin(this);
-                if (user == null)
-                {
-                    Client.Disconnect();
-                    return;
-                }
-
-                var status = lh.HandleLogin(user);
-                Client.Send(new[] { user.AuthTypeVersion, (byte)status });
-                if (status == LoginStatus.Denied)
-                {
-                    Client.Disconnect();
-                    return;
-                }
-
-                if (status == LoginStatus.Correct)
-                {
-                    Authenticated = socksEncryption.GetAuthType() == AuthTypes.Login ? 1 : 2;
-                    break;
-                }
-            }
-        }
-        else if (authtypes.Contains(AuthTypes.None))
+        if (authtypes.Contains(AuthTypes.None))
         {
             //no authentication.
-            if (lhandlers.Count <= 0)
-            {
-                //unsupported methods y0
-                Authenticated = 1;
-                Client.Send(new[] { (byte)HeaderTypes.Socks5, (byte)HeaderTypes.Zero });
-            }
-            else
-            {
-                //unsupported.
-                Client.Send(new[] { (byte)HeaderTypes.Socks5, (byte)AuthTypes.Unsupported });
-                Client.Disconnect();
-                return;
-            }
+            //unsupported methods y0
+            Authenticated = 1;
+            Client.Send(new[] { (byte)HeaderTypes.Socks5, (byte)HeaderTypes.Zero });
         }
         else
         {
@@ -123,17 +78,6 @@ public class ClientEnd
             }
 
             Destination = new SocksRequest(req.StreamType, req.Type, req.Address, req.Port);
-            //call on plugins for connect callbacks.
-            foreach (ConnectHandler conn in PluginLoader.LoadPlugin(typeof(ConnectHandler))) 
-            {
-                if (conn.OnConnect(Destination) == false)
-                {
-                    req.Error = SocksError.Failure;
-                    Client.Send(req.GetData(true) ?? Array.Empty<byte>());
-                    Client.Disconnect();
-                    return;
-                }
-            }
 
             //Send Tunnel Data back.
             var x = new SocksTunnel(this, req, Destination, packetSize, timeout);
@@ -149,14 +93,6 @@ public class ClientEnd
             }
 
             Destination = new SocksRequest(req.StreamType, req.Type, req.Address, req.Port);
-            foreach (ConnectHandler conn in PluginLoader.LoadPlugin(typeof(ConnectHandler)))
-                if (conn.OnConnect(Destination) == false)
-                {
-                    req.Error = SocksError.Failure;
-                    Client.Send(req.GetData(true));
-                    Client.Disconnect();
-                    return;
-                }
 
             //Send Tunnel Data back.
             var x = new SocksSpecialTunnel(this, socksEncryption, req, Destination, packetSize, timeout);

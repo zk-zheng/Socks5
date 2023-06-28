@@ -1,6 +1,4 @@
 ﻿using System.Net;
-using Socks5.Core.Plugin;
-using Socks5.Core.Socks;
 using Socks5.Core.SocksServer;
 
 var socks5Server = new Socks5Server(IPAddress.Any, 4444);

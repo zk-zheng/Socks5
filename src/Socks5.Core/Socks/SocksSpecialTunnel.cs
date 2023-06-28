@@ -19,7 +19,6 @@
 using System.Net;
 using System.Net.Sockets;
 using Socks5.Core.Encryption;
-using Socks5.Core.Plugin;
 using Socks5.Core.TCP;
 
 namespace Socks5.Core.Socks;
@@ -28,7 +27,6 @@ internal class SocksSpecialTunnel
 {
     private readonly int _packetSize = 4096;
 
-    private readonly List<DataHandler> _plugins = new();
     private readonly SocksEncryption _se;
     private bool _disconnected;
 
@@ -61,28 +59,8 @@ internal class SocksSpecialTunnel
             return;
         }
 #if DEBUG
-        Console.WriteLine("{0}:{1}", ModifiedReq.Address, ModifiedReq.Port);
+        Console.WriteLine("SocksSpecialTunnel.Open: {0}:{1}", ModifiedReq.Address, ModifiedReq.Port);
 #endif
-        foreach (ConnectSocketOverrideHandler conn in PluginLoader.LoadPlugin(typeof(ConnectSocketOverrideHandler)))
-        {
-            var pm = conn.OnConnectOverride(ModifiedReq);
-            if (!pm.Sock.Connected)
-            {
-                continue;
-            }
-            
-            RemoteClient = pm;
-            //send request right here.
-            var shit = Req.GetData(true);
-            shit[1] = 0x00;
-            //process packet.
-            var output = _se.ProcessOutputData(shit, 0, shit.Length);
-            ArgumentNullException.ThrowIfNull(output);
-            //gucci let's go.
-            ClientEnd.Client.Send(output);
-            ConnectHandler(new SocketAsyncEventArgs());
-            return;
-        }
 
         ArgumentNullException.ThrowIfNull(ModifiedReq.Ip);
         var socketArgs = new SocketAsyncEventArgs { RemoteEndPoint = new IPEndPoint(ModifiedReq.Ip, ModifiedReq.Port) };
@@ -130,8 +108,6 @@ internal class SocksSpecialTunnel
             //all plugins get the event thrown.
             ClientEnd.Client.Sock.ReceiveBufferSize = 4200;
             ClientEnd.Client.Sock.SendBufferSize = 4200;
-            foreach (DataHandler data in PluginLoader.LoadPlugin(typeof(DataHandler)))
-                _plugins.Push(data);
             ClientEnd.Client.OnDataReceived += Client_onDataReceived;
             RemoteClient.OnDataReceived += RemoteClient_onDataReceived;
             RemoteClient.OnClientDisconnected += RemoteClient_onClientDisconnected;
@@ -139,8 +115,9 @@ internal class SocksSpecialTunnel
             ClientEnd.Client.StartReceiveAsync();
             RemoteClient.StartReceiveAsync();
         }
-        catch
+        catch (Exception ex)
         {
+            Utils.TraceMessage(ex.ToString());
         }
     }
 
@@ -170,8 +147,6 @@ internal class SocksSpecialTunnel
         e.Request = ModifiedReq;
         try
         {
-            foreach (var f in _plugins)
-                f.OnServerDataReceived(this, e);
             //craft headers & shit.
             if (e.Count > 0)
             {
@@ -191,8 +166,9 @@ internal class SocksSpecialTunnel
                 RemoteClient.StartReceiveAsync();
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Utils.TraceMessage(ex.ToString());
             ClientEnd.Client.Disconnect();
             RemoteClient.Disconnect();
         }
@@ -215,8 +191,6 @@ internal class SocksSpecialTunnel
                 e.Offset = 0;
                 e.Count = output.Length;
                 //receive full packet.
-                foreach (var f in _plugins)
-                    f.OnClientDataReceived(this, e);
                 if (e.Count > 0)
                 {
                     RemoteClient.SendAsync(e.Buffer, e.Offset, e.Count);    
@@ -228,8 +202,9 @@ internal class SocksSpecialTunnel
                 ClientEnd.Client.StartReceiveAsync();
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Utils.TraceMessage(ex.ToString());
             //disconnect.
             ClientEnd.Client.Disconnect();
             RemoteClient.Disconnect();

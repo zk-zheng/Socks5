@@ -123,7 +123,7 @@ public class Client
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.ToString());
+            Utils.TraceMessage(ex.ToString());
             Disconnect();
             return false;
         }
@@ -138,7 +138,7 @@ public class Client
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.ToString());
+            Utils.TraceMessage(ex.ToString());
             Disconnect();
         }
     }
@@ -158,7 +158,7 @@ public class Client
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.ToString());
+            Utils.TraceMessage(ex.ToString());
             Disconnect();
             return -1;
         }
@@ -228,7 +228,7 @@ public class Client
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.ToString());
+            Utils.TraceMessage(ex.ToString());
         }
     }
 
@@ -253,7 +253,7 @@ public class Client
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.ToString());
+            Utils.TraceMessage(ex.ToString());
             Disconnect();
         }
     }
@@ -270,7 +270,7 @@ public class Client
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.ToString());
+            Utils.TraceMessage(ex.ToString());
             Disconnect();
         }
     }
