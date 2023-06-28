@@ -69,7 +69,7 @@ public class Stats
         return readable.ToString("0.###");
     }
     
-    public void AddClient()
+    public void AddClientEnd()
     {
         TotalClients++;
         ClientsSinceRun++;

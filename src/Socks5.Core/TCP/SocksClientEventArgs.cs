@@ -4,10 +4,10 @@ namespace Socks5.Core.TCP;
 
 public class SocksClientEventArgs : EventArgs
 {
-    public SocksClientEventArgs(SocksClient client)
+    public SocksClientEventArgs(ClientEnd client)
     {
         Client = client;
     }
 
-    public SocksClient Client { get; private set; }
+    public ClientEnd Client { get; private set; }
 }

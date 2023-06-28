@@ -28,7 +28,7 @@ internal class SocksTunnel
     private readonly int _packetSize = 4096;
 
     private readonly List<DataHandler> _plugins = new();
-    public SocksClient Client;
+    public ClientEnd Client;
     private bool _disconnected;
     public SocksRequest ModifiedReq;
     public Client RemoteClient;
@@ -38,7 +38,7 @@ internal class SocksTunnel
 
     private int _timeout = 10000;
 
-    public SocksTunnel(SocksClient p, SocksRequest req, SocksRequest req1, int packetSize, int timeout)
+    public SocksTunnel(ClientEnd p, SocksRequest req, SocksRequest req1, int packetSize, int timeout)
     {
         RemoteClient = new Client(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp),
                                   _packetSize);

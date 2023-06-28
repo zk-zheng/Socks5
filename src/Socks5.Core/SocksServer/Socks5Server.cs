@@ -27,7 +27,7 @@ public class Socks5Server
 {
     private readonly TcpServer _server;
 
-    public List<SocksClient> Clients = new();
+    public List<ClientEnd> ClientEnds = new();
     private Thread? _networkStats;
 
     private bool _started;
@@ -64,7 +64,7 @@ public class Socks5Server
         {
             while (_started)
             {
-                Stats.ResetClients(Clients.Count);
+                Stats.ResetClients(ClientEnds.Count);
                 Thread.Sleep(1000);
             }
         }));
@@ -77,12 +77,12 @@ public class Socks5Server
             return;
 
         _server.Stop();
-        foreach (var t in Clients)
+        foreach (var t in ClientEnds)
         {
             t.Client.Disconnect();
         }
 
-        Clients.Clear();
+        ClientEnds.Clear();
         _started = false;
     }
 
@@ -107,22 +107,22 @@ public class Socks5Server
             }
         }
 
-        var socksClient = new SocksClient(e.Client);
+        var clientEnd = new ClientEnd(e.Client);
 
         e.Client.OnDataReceived += Client_onDataReceived;
         e.Client.OnDataSent += Client_onDataSent;
-        socksClient.OnClientDisconnected += Client_onClientDisconnected;
-        Clients.Add(socksClient);
-        Stats.AddClient();
-        socksClient.Begin(OutboundIpAddress, PacketSize, Timeout);
+        clientEnd.OnClientEndDisconnected += ClientEnd_onDisconnected;
+        ClientEnds.Add(clientEnd);
+        Stats.AddClientEnd();
+        clientEnd.Begin(OutboundIpAddress, PacketSize, Timeout);
     }
 
-    private void Client_onClientDisconnected(object? sender, SocksClientEventArgs e)
+    private void ClientEnd_onDisconnected(object? sender, SocksClientEventArgs e)
     {
-        e.Client.OnClientDisconnected -= Client_onClientDisconnected;
+        e.Client.OnClientEndDisconnected -= ClientEnd_onDisconnected;
         e.Client.Client.OnDataReceived -= Client_onDataReceived;
         e.Client.Client.OnDataSent -= Client_onDataSent;
-        Clients.Remove(e.Client);
+        ClientEnds.Remove(e.Client);
         foreach (ClientDisconnectedHandler cdh in PluginLoader.LoadPlugin(typeof(ClientDisconnectedHandler)))
         {
             try

@@ -25,7 +25,7 @@ namespace Socks5.Core.Socks;
 
 internal class Socks5
 {
-    public static List<AuthTypes> RequestAuth(SocksClient client)
+    public static List<AuthTypes> RequestAuth(ClientEnd client)
     {
         byte[] buff;
         var recv = Receive(client.Client, out buff);
@@ -138,7 +138,7 @@ internal class Socks5
         throw new NotSupportedException("Auth type not supported.");
     }
 
-    public static User? RequestLogin(SocksClient client)
+    public static User? RequestLogin(ClientEnd client)
     {
         //request authentication.
         client.Client.Send(new[] { (byte)HeaderTypes.Socks5, (byte)AuthTypes.Login });
@@ -157,7 +157,7 @@ internal class Socks5
         return new User(buff[0], username, password, (IPEndPoint)client.Client.Sock.RemoteEndPoint);
     }
 
-    public static SocksRequest? RequestTunnel(SocksClient client, SocksEncryption ph)
+    public static SocksRequest? RequestTunnel(ClientEnd client, SocksEncryption ph)
     {
         byte[] data;
         var recv = Receive(client.Client, out data);

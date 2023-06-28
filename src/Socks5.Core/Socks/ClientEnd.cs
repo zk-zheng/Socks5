@@ -23,11 +23,11 @@ using Socks5.Core.TCP;
 
 namespace Socks5.Core.Socks;
 
-public class SocksClient
+public class ClientEnd
 {
     public Client Client;
 
-    public SocksClient(Client client)
+    public ClientEnd(Client client)
     {
         Client = client;
     }
@@ -35,7 +35,7 @@ public class SocksClient
     public int Authenticated { get; private set; }
     public SocksRequest? Destination { get; private set; }
 
-    public event EventHandler<SocksClientEventArgs> OnClientDisconnected = delegate { };
+    public event EventHandler<SocksClientEventArgs> OnClientEndDisconnected = delegate { };
 
     public void Begin(IPAddress outboundInterface, int packetSize, int timeout)
     {
@@ -166,7 +166,7 @@ public class SocksClient
 
     private void Client_onClientDisconnected(object? sender, ClientEventArgs e)
     {
-        OnClientDisconnected(this, new SocksClientEventArgs(this));
+        OnClientEndDisconnected(this, new SocksClientEventArgs(this));
         Client.OnClientDisconnected -= Client_onClientDisconnected;
         //added to clear up memory
     }

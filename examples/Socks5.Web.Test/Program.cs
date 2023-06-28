@@ -17,7 +17,7 @@ app.Lifetime.ApplicationStopping.Register(() =>
 app.MapGet("/", () =>
 {
     var totalString = "";
-    foreach (var item in socks5Server.Clients)
+    foreach (var item in socks5Server.ClientEnds)
     {
         if (item?.Client?.Sock == null)
         {

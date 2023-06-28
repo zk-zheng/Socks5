@@ -32,7 +32,7 @@ internal class SocksSpecialTunnel
     private readonly SocksEncryption _se;
     private bool _disconnected;
 
-    public SocksClient Client;
+    public ClientEnd ClientEnd;
     public Client RemoteClient;
 
     public SocksRequest ModifiedReq;
@@ -40,12 +40,12 @@ internal class SocksSpecialTunnel
 
     private int _timeout;
 
-    public SocksSpecialTunnel(SocksClient p, SocksEncryption ph, SocksRequest req, SocksRequest req1, int packetSize,
+    public SocksSpecialTunnel(ClientEnd p, SocksEncryption ph, SocksRequest req, SocksRequest req1, int packetSize,
                               int timeout = 10000)
     {
         RemoteClient = new Client(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp),
                                   _packetSize);
-        Client = p;
+        ClientEnd = p;
         Req = req;
         ModifiedReq = req1;
         _packetSize = packetSize;
@@ -57,7 +57,7 @@ internal class SocksSpecialTunnel
     {
         if (ModifiedReq.Port <= -1)
         {
-            Client.Client.Disconnect();
+            ClientEnd.Client.Disconnect();
             return;
         }
 #if DEBUG
@@ -79,7 +79,7 @@ internal class SocksSpecialTunnel
             var output = _se.ProcessOutputData(shit, 0, shit.Length);
             ArgumentNullException.ThrowIfNull(output);
             //gucci let's go.
-            Client.Client.Send(output);
+            ClientEnd.Client.Send(output);
             ConnectHandler(new SocketAsyncEventArgs());
             return;
         }
@@ -110,7 +110,7 @@ internal class SocksSpecialTunnel
 
         var encreq = _se.ProcessOutputData(request, 0, request.Length);
         if (encreq is not null) {
-            Client.Client.Send(encreq);    
+            ClientEnd.Client.Send(encreq);    
         }
 
         switch (e.LastOperation)
@@ -128,15 +128,15 @@ internal class SocksSpecialTunnel
         try
         {
             //all plugins get the event thrown.
-            Client.Client.Sock.ReceiveBufferSize = 4200;
-            Client.Client.Sock.SendBufferSize = 4200;
+            ClientEnd.Client.Sock.ReceiveBufferSize = 4200;
+            ClientEnd.Client.Sock.SendBufferSize = 4200;
             foreach (DataHandler data in PluginLoader.LoadPlugin(typeof(DataHandler)))
                 _plugins.Push(data);
-            Client.Client.OnDataReceived += Client_onDataReceived;
+            ClientEnd.Client.OnDataReceived += Client_onDataReceived;
             RemoteClient.OnDataReceived += RemoteClient_onDataReceived;
             RemoteClient.OnClientDisconnected += RemoteClient_onClientDisconnected;
-            Client.Client.OnClientDisconnected += Client_onClientDisconnected;
-            Client.Client.StartReceiveAsync();
+            ClientEnd.Client.OnClientDisconnected += Client_onClientDisconnected;
+            ClientEnd.Client.StartReceiveAsync();
             RemoteClient.StartReceiveAsync();
         }
         catch
@@ -182,7 +182,7 @@ internal class SocksSpecialTunnel
                     Buffer.BlockCopy(outputData, 0, dataToSend, 4, outputData.Length);
                     Buffer.BlockCopy(BitConverter.GetBytes(outputData.Length), 0, dataToSend, 0, 4);
                     //send outputdata's length first.
-                    Client.Client.Send(dataToSend);
+                    ClientEnd.Client.Send(dataToSend);
                 }
             }
             
@@ -193,7 +193,7 @@ internal class SocksSpecialTunnel
         }
         catch
         {
-            Client.Client.Disconnect();
+            ClientEnd.Client.Disconnect();
             RemoteClient.Disconnect();
         }
     }
@@ -223,15 +223,15 @@ internal class SocksSpecialTunnel
                 }    
             }
             
-            if (!Client.Client.Receiving)
+            if (!ClientEnd.Client.Receiving)
             {
-                Client.Client.StartReceiveAsync();
+                ClientEnd.Client.StartReceiveAsync();
             }
         }
         catch
         {
             //disconnect.
-            Client.Client.Disconnect();
+            ClientEnd.Client.Disconnect();
             RemoteClient.Disconnect();
         }
     }
