@@ -27,9 +27,9 @@ public class SocksClient
 {
     public Client Client;
 
-    public SocksClient(Client cli)
+    public SocksClient(Client client)
     {
-        Client = cli;
+        Client = client;
     }
 
     public int Authenticated { get; private set; }

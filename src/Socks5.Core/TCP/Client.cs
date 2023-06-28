@@ -71,10 +71,11 @@ namespace Socks5.Core.TCP;
 
 public class Client
 {
+    private const int MaxStackSize = 300;
     private int _packetSize = 4096;
     private byte[] _buffer;
     private bool _disposed;
-    public bool Receiving;
+    private int _currentStackSize = 0;
 
     public Client(Socket sock, int packetSize)
     {
@@ -87,37 +88,57 @@ public class Client
     }
 
     public Socket Sock { get; set; }
-    public event EventHandler<ClientEventArgs> OnClientDisconnected;
 
+    public bool Receiving { get; set; }
+
+    public event EventHandler<ClientEventArgs> OnClientDisconnected;
     public event EventHandler<DataEventArgs> OnDataReceived = delegate { };
     public event EventHandler<DataEventArgs> OnDataSent = delegate { };
 
-    private void DataReceived(IAsyncResult res)
+    public bool Send(byte[] buff)
     {
-        Receiving = false;
+        return Send(buff, 0, buff.Length);
+    }
+
+    public bool Send(byte[] buff, int offset, int count)
+    {
         try
         {
-            var error = SocketError.Success;
-            if (_disposed || res.AsyncState is null)
+            if (Sock != null)
             {
-                return;
+                if (Sock.Send(buff, offset, count, SocketFlags.None) <= 0)
+                {
+                    Disconnect();
+                    return false;
+                }
+
+                //!! TODO: if sent count != count ?
+
+                var data = new DataEventArgs(this, buff, count);
+                OnDataSent(this, data);
+                return true;
             }
 
-            var received = ((Socket)res.AsyncState).EndReceive(res, out error);
-            if (received <= 0 || error != SocketError.Success)
-            {
-                Disconnect();
-                return;
-            }
-
-            var data = new DataEventArgs(this, _buffer, received);
-            OnDataReceived(this, data);
+            return false;
         }
         catch (Exception ex)
         {
-#if DEBUG
             Console.WriteLine(ex.ToString());
-#endif
+            Disconnect();
+            return false;
+        }
+    }
+
+    public void SendAsync(byte[] buff, int offset, int count)
+    {
+        try
+        {
+            if (Sock != null && Sock.Connected)
+                Sock.BeginSend(buff, offset, count, SocketFlags.None, DataSent, Sock);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
             Disconnect();
         }
     }
@@ -137,16 +158,12 @@ public class Client
         }
         catch (Exception ex)
         {
-#if DEBUG
             Console.WriteLine(ex.ToString());
-#endif
             Disconnect();
             return -1;
         }
     }
 
-    private const int MaxStackSize = 300;
-    private int _currentStackSize = 0;
     public void StartReceiveAsync(int bufferSize = -1)
     {
         if (++_currentStackSize > MaxStackSize)
@@ -157,25 +174,6 @@ public class Client
         }
 
         ReceiveAsync(bufferSize);
-    }
-
-    private void ReceiveAsync(object? obj)
-    {
-        try
-        {
-            var bufferSize = (int)(obj ?? -1);
-            if (bufferSize > -1) 
-                _buffer = new byte[bufferSize];
-            Receiving = true;
-            Sock.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, DataReceived, Sock);
-        }
-        catch (Exception ex)
-        {
-#if DEBUG
-            Console.WriteLine(ex.ToString());
-#endif
-            Disconnect();
-        }
     }
 
     public void Disconnect()
@@ -204,9 +202,17 @@ public class Client
         }
     }
 
+    // Public implementation of Dispose pattern callable by consumers. 
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
     private void DataSent(IAsyncResult res)
     {
         ArgumentNullException.ThrowIfNull(res.AsyncState);
+
         try
         {
             var sent = ((Socket)res.AsyncState).EndSend(res);
@@ -222,81 +228,60 @@ public class Client
         }
         catch (Exception ex)
         {
-#if DEBUG
             Console.WriteLine(ex.ToString());
-#endif
         }
     }
 
-    public bool Send(byte[] buff)
+    private void DataReceived(IAsyncResult res)
     {
-        return Send(buff, 0, buff.Length);
-    }
-
-    public void SendAsync(byte[] buff, int offset, int count)
-    {
+        Receiving = false;
         try
         {
-            if (Sock != null && Sock.Connected)
-                Sock.BeginSend(buff, offset, count, SocketFlags.None, DataSent, Sock);
-        }
-        catch (Exception ex)
-        {
-#if DEBUG
-            Console.WriteLine(ex.ToString());
-#endif
-            Disconnect();
-        }
-    }
+            var error = SocketError.Success;
+            if (_disposed || res.AsyncState is null)
+                return;
 
-    public bool Send(byte[] buff, int offset, int count)
-    {
-        try
-        {
-            if (Sock != null)
+            var received = ((Socket)res.AsyncState).EndReceive(res, out error);
+            if (received <= 0 || error != SocketError.Success)
             {
-                if (Sock.Send(buff, offset, count, SocketFlags.None) <= 0)
-                {
-                    Disconnect();
-                    return false;
-                }
-
-                //!! TODO: if sent count != count ?
-
-                var data = new DataEventArgs(this, buff, count);
-                OnDataSent(this, data);
-                return true;
+                Disconnect();
+                return;
             }
 
-            return false;
+            var data = new DataEventArgs(this, _buffer, received);
+            OnDataReceived(this, data);
         }
         catch (Exception ex)
         {
-#if DEBUG
             Console.WriteLine(ex.ToString());
-#endif
             Disconnect();
-            return false;
         }
     }
 
-    // Public implementation of Dispose pattern callable by consumers. 
-    public void Dispose()
+    private void ReceiveAsync(object? obj)
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
+        try
+        {
+            var bufferSize = (int)(obj ?? -1);
+            if (bufferSize > -1) 
+                _buffer = new byte[bufferSize];
+            Receiving = true;
+            Sock.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, DataReceived, Sock);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+            Disconnect();
+        }
     }
 
     // Protected implementation of Dispose pattern. 
     protected virtual void Dispose(bool disposing)
     {
         if (_disposed)
-        {
             return;
-        }
 
         _disposed = true;
-
         if (disposing)
         {
             // Free any other managed objects here. 

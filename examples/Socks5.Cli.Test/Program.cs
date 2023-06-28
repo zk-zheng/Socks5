@@ -33,14 +33,14 @@ while (true)
 
     if (changed)
     {
-        Console.Write("Total Clients: \t{0}\n" +
-                      "Total Recvd: \t{1:0.00##}MB\n" +
-                      "Total Sent: \t{2:0.00##}MB\n",
-            socks5Server.Stats.TotalClients, ((socks5Server.Stats.NetworkReceived / 1024f) / 1024f), ((socks5Server.Stats.NetworkSent / 1024f) / 1024f));
-        Console.Write("Receiving/sec: \t{0}\n" +
-                      "Sending/sec: \t{1}\n",
-            socks5Server.Stats.ReceivedBytesPerSecond(), socks5Server.Stats.SentBytesPerSecond());
-        Console.WriteLine("");
+        Console.WriteLine(
+            "[Total Clients: {0,2}] [Total Recv/Sent: {1,12:N3}{2,12:N3} (MB)] [Speed R|S: {3,12:N3}{4,12:N3} (kB/s)]",
+            socks5Server.Stats.TotalClients, 
+            socks5Server.Stats.NetworkReceived / 1024f / 1024f, 
+            socks5Server.Stats.NetworkSent / 1024f / 1024f,
+            socks5Server.Stats.ReceivedBytesPerSecond(), 
+            socks5Server.Stats.SentBytesPerSecond()
+            );
     }
 
     Thread.Sleep(1000);

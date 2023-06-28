@@ -52,9 +52,7 @@ public class Socks5Server
     public void Start()
     {
         if (_started)
-        {
             return;
-        }
         
         PluginLoader.LoadPluginsFromDisk = LoadPluginsFromDisk;
         PluginLoader.LoadPlugins();
@@ -77,8 +75,8 @@ public class Socks5Server
     {
         if (!_started) 
             return;
+
         _server.Stop();
-        
         foreach (var t in Clients)
         {
             t.Client.Disconnect();

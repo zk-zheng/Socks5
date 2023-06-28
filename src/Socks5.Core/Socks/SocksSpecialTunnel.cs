@@ -30,10 +30,12 @@ internal class SocksSpecialTunnel
 
     private readonly List<DataHandler> _plugins = new();
     private readonly SocksEncryption _se;
-    public SocksClient Client;
     private bool _disconnected;
-    public SocksRequest ModifiedReq;
+
+    public SocksClient Client;
     public Client RemoteClient;
+
+    public SocksRequest ModifiedReq;
     public SocksRequest Req;
 
     private int _timeout;

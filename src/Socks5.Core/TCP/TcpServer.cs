@@ -23,17 +23,13 @@ namespace Socks5.Core.TCP;
 
 public class TcpServer
 {
-    private readonly TcpListener _p;
-
-    private readonly ManualResetEvent _task = new(false);
-    private bool _accept;
-
-    //public event EventHandler<DataEventArgs> onDataReceived = delegate { };
-    //public event EventHandler<DataEventArgs> onDataSent = delegate { };
+    private readonly TcpListener _tcpListener;
+    private readonly ManualResetEvent _event = new(false);
+    private bool _accepted;
 
     public TcpServer(IPAddress ip, int port)
     {
-        _p = new TcpListener(ip, port);
+        _tcpListener = new TcpListener(ip, port);
     }
 
     public int PacketSize { get; set; }
@@ -41,14 +37,34 @@ public class TcpServer
     public event EventHandler<ClientEventArgs> OnClientConnected = delegate { };
     public event EventHandler<ClientEventArgs> OnClientDisconnected = delegate { };
 
+    public void Start()
+    {
+        if (!_accepted)
+        {
+            _accepted = true;
+            _tcpListener.Start(10000);
+            new Thread(AcceptConnections).Start();
+        }
+    }
+
+    public void Stop()
+    {
+        if (_accepted)
+        {
+            _accepted = false;
+            _tcpListener.Stop();
+            _event.Set();
+        }
+    }
+
     private void AcceptConnections()
     {
-        while (_accept)
+        while (_accepted)
             try
             {
-                _task.Reset();
-                _p.BeginAcceptSocket(AcceptClient, _p);
-                _task.WaitOne();
+                _event.Reset();
+                _tcpListener.BeginAcceptSocket(AcceptClient, _tcpListener);
+                _event.WaitOne();
             }
             catch
             {
@@ -61,14 +77,14 @@ public class TcpServer
         try
         {
             if (res.AsyncState is null)
-            {
                 return;
-            }
             
             var px = (TcpListener)res.AsyncState;
-            var x = px.EndAcceptSocket(res);
-            _task.Set();
-            var f = new Client(x, PacketSize);
+            var socket = px.EndAcceptSocket(res);
+
+            _event.Set();
+
+            var f = new Client(socket, PacketSize);
             //f.onClientDisconnected += onClientDisconnected;
             //f.onDataReceived += onDataReceived;
             //f.onDataSent += onDataSent;
@@ -78,26 +94,6 @@ public class TcpServer
         {
             Console.WriteLine(ex.ToString());
             //server stopped or client errored?
-        }
-    }
-
-    public void Start()
-    {
-        if (!_accept)
-        {
-            _accept = true;
-            _p.Start(10000);
-            new Thread(AcceptConnections).Start();
-        }
-    }
-
-    public void Stop()
-    {
-        if (_accept)
-        {
-            _accept = false;
-            _p.Stop();
-            _task.Set();
         }
     }
 }
