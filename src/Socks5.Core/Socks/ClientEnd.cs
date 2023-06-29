@@ -67,8 +67,6 @@ public class ClientEnd
         //Request Site Data.
         if (Authenticated == 1)
         {
-            //var socksEncryption = new SocksEncryption();
-            //socksEncryption.SetType(AuthTypes.Login);
             var req = Socks5.RequestTunnel(this);
             if (req == null)
             {

@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Socks5.Core", "src\Socks5.C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{4921EFBD-4C5A-47F9-AC13-C104BC8D5DDD}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{BCB8D961-BB9A-48DA-8E5B-5F4E4EB5B111}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{BCB8D961-BB9A-48DA-8E5B-5F4E4EB5B111}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Socks5.Cli.Test", "examples\Socks5.Cli.Test\Socks5.Cli.Test.csproj", "{D1AD2CB6-237F-4FB6-B9DB-FE67D825BABA}"
 EndProject

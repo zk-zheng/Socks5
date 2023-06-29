@@ -46,15 +46,6 @@ internal class Socks5
                 case AuthTypes.None:
                     types.Add(AuthTypes.None);
                     break;
-                //case AuthTypes.SocksBoth:
-                //    types.Add(AuthTypes.SocksBoth);
-                //    break;
-                //case AuthTypes.SocksEncrypt:
-                //    types.Add(AuthTypes.SocksEncrypt);
-                //    break;
-                //case AuthTypes.SocksCompress:
-                //    types.Add(AuthTypes.SocksCompress);
-                //    break;
             }
         }
 
