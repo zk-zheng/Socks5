@@ -18,7 +18,6 @@
 
 using System.Net;
 using System.Text;
-using Socks5.Core.Encryption;
 using Socks5.Core.TCP;
 
 namespace Socks5.Core.Socks;
@@ -47,26 +46,26 @@ internal class Socks5
                 case AuthTypes.None:
                     types.Add(AuthTypes.None);
                     break;
-                case AuthTypes.SocksBoth:
-                    types.Add(AuthTypes.SocksBoth);
-                    break;
-                case AuthTypes.SocksEncrypt:
-                    types.Add(AuthTypes.SocksEncrypt);
-                    break;
-                case AuthTypes.SocksCompress:
-                    types.Add(AuthTypes.SocksCompress);
-                    break;
+                //case AuthTypes.SocksBoth:
+                //    types.Add(AuthTypes.SocksBoth);
+                //    break;
+                //case AuthTypes.SocksEncrypt:
+                //    types.Add(AuthTypes.SocksEncrypt);
+                //    break;
+                //case AuthTypes.SocksCompress:
+                //    types.Add(AuthTypes.SocksCompress);
+                //    break;
             }
         }
 
         return types;
     }
 
-    public static SocksRequest? RequestTunnel(ClientEnd client, SocksEncryption ph)
+    public static SocksRequest? RequestTunnel(ClientEnd client)
     {
         byte[] data;
         var recv = Receive(client.Client, out data);
-        var buff = ph.ProcessInputData(data, 0, recv);
+        var buff = data;
         if (buff == null || (HeaderTypes)buff[0] != HeaderTypes.Socks5) 
             return null;
 

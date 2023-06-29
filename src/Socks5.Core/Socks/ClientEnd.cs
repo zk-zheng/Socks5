@@ -17,7 +17,6 @@
 */
 
 using System.Net;
-using Socks5.Core.Encryption;
 using Socks5.Core.TCP;
 
 namespace Socks5.Core.Socks;
@@ -48,7 +47,7 @@ public class ClientEnd
         }
 
         Authenticated = 0;
-        SocksEncryption socksEncryption = new SocksEncryption();
+        // SocksEncryption socksEncryption = new SocksEncryption();
         //check out different auth types, none will have no authentication, the rest do.
         if (authtypes.Contains(AuthTypes.None))
         {
@@ -68,9 +67,9 @@ public class ClientEnd
         //Request Site Data.
         if (Authenticated == 1)
         {
-            socksEncryption = new SocksEncryption();
-            socksEncryption.SetType(AuthTypes.Login);
-            var req = Socks5.RequestTunnel(this, socksEncryption);
+            //var socksEncryption = new SocksEncryption();
+            //socksEncryption.SetType(AuthTypes.Login);
+            var req = Socks5.RequestTunnel(this);
             if (req == null)
             {
                 Client.Disconnect();
@@ -81,21 +80,6 @@ public class ClientEnd
 
             //Send Tunnel Data back.
             var x = new SocksTunnel(this, req, Destination, packetSize, timeout);
-            x.Open(outboundInterface);
-        }
-        else if (Authenticated == 2)
-        {
-            var req = Socks5.RequestTunnel(this, socksEncryption);
-            if (req == null)
-            {
-                Client.Disconnect();
-                return;
-            }
-
-            Destination = new SocksRequest(req.StreamType, req.Type, req.Address, req.Port);
-
-            //Send Tunnel Data back.
-            var x = new SocksSpecialTunnel(this, socksEncryption, req, Destination, packetSize, timeout);
             x.Open(outboundInterface);
         }
     }
